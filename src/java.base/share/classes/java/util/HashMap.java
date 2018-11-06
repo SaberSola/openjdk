@@ -277,10 +277,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * TreeNode subclass, and in LinkedHashMap for its Entry subclass.)
      */
     static class Node<K,V> implements Map.Entry<K,V> {
-        final int hash;
-        final K key;
-        V value;
-        Node<K,V> next;
+
+        final int hash; //hash值
+        final K key;    //key
+        V value;        // value
+        Node<K,V> next; //链表的后置节点
 
         Node(int hash, K key, V value, Node<K,V> next) {
             this.hash = hash;
@@ -293,6 +294,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final V getValue()      { return value; }
         public final String toString() { return key + "=" + value; }
 
+        //每个节点的hash值 将key和value的hashcode值异或得到的
         public final int hashCode() {
             return Objects.hashCode(key) ^ Objects.hashCode(value);
         }

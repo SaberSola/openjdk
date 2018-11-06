@@ -113,19 +113,19 @@ public class ArrayList<E> extends AbstractList<E>
     /**
      * Default initial capacity.
      */
-    private static final int DEFAULT_CAPACITY = 10;
+    private static final int DEFAULT_CAPACITY = 10;  //初始化默认值
 
     /**
      * Shared empty array instance used for empty instances.
      */
-    private static final Object[] EMPTY_ELEMENTDATA = {};
+    private static final Object[] EMPTY_ELEMENTDATA = {};   //list 是由数组构成
 
     /**
      * Shared empty array instance used for default sized empty instances. We
      * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
      * first element is added.
      */
-    private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
+    private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {}; // 一个空对象，如果使用默认构造函数创建，则默认对象内容默认是该值
 
     /**
      * The array buffer into which the elements of the ArrayList are stored.
@@ -135,12 +135,14 @@ public class ArrayList<E> extends AbstractList<E>
      */
     transient Object[] elementData; // non-private to simplify nested class access
 
+    //数据存放的数组 并且不序列化
+
     /**
      * The size of the ArrayList (the number of elements it contains).
      *
      * @serial
      */
-    private int size;
+    private int size;     //当前数组的长度
 
     /**
      * Constructs an empty list with the specified initial capacity.
@@ -149,7 +151,7 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IllegalArgumentException if the specified initial capacity
      *         is negative
      */
-    public ArrayList(int initialCapacity) {
+    public ArrayList(int initialCapacity) {            //初始化固定长度的arraylist
         if (initialCapacity > 0) {
             this.elementData = new Object[initialCapacity];
         } else if (initialCapacity == 0) {
@@ -165,7 +167,7 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public ArrayList() {
         this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
-    }
+    }  //初始化方法
 
     /**
      * Constructs a list containing the elements of the specified
@@ -174,6 +176,8 @@ public class ArrayList<E> extends AbstractList<E>
      *
      * @param c the collection whose elements are to be placed into this list
      * @throws NullPointerException if the specified collection is null
+     *
+     * 将collection对象克隆到arraylist中
      */
     public ArrayList(Collection<? extends E> c) {
         elementData = c.toArray();
