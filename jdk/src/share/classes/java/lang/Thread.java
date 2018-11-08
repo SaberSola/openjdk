@@ -137,49 +137,54 @@ import sun.security.util.SecurityConstants;
  * @see     #stop()
  * @since   JDK1.0
  */
+
+/**
+ * Thread 实现 Runnable
+ */
 public
 class Thread implements Runnable {
     /* Make sure registerNatives is the first thing <clinit> does. */
-    private static native void registerNatives();
+    private static native void registerNatives();        //Native方法
     static {
         registerNatives();
     }
 
-    private volatile String name;
-    private int            priority;
+    private volatile String name;    // 线程名称  volatile 修饰 被所有线程可见
+    private int            priority; //线程的优先级
     private Thread         threadQ;
     private long           eetop;
 
     /* Whether or not to single_step this thread. */
-    private boolean     single_step;
+    private boolean     single_step;              //是否单独执行此线程
 
     /* Whether or not the thread is a daemon thread. */
-    private boolean     daemon = false;
+    private boolean     daemon = false;            //是否是守护线程
 
     /* JVM state */
-    private boolean     stillborn = false;
+    private boolean     stillborn = false;        //虚拟机状态
 
     /* What will be run. */
-    private Runnable target;
+    private Runnable target;           // 真正执行Runnable
 
     /* The group of this thread */
-    private ThreadGroup group;
+    private ThreadGroup group;         //线程所属的线程组
 
     /* The context ClassLoader for this thread */
-    private ClassLoader contextClassLoader;
+    private ClassLoader contextClassLoader;   //这个线程的上下文加载器ClassLoader
 
     /* The inherited AccessControlContext of this thread */
-    private AccessControlContext inheritedAccessControlContext;
+    private AccessControlContext inheritedAccessControlContext;  // 这个线程的继承
 
     /* For autonumbering anonymous threads. */
-    private static int threadInitNumber;
+    private static int threadInitNumber; //所有初始化线程的数目
+
     private static synchronized int nextThreadNum() {
         return threadInitNumber++;
     }
 
     /* ThreadLocal values pertaining to this thread. This map is maintained
      * by the ThreadLocal class. */
-    ThreadLocal.ThreadLocalMap threadLocals = null;
+    ThreadLocal.ThreadLocalMap threadLocals = null;   //这是为ThreadLocal类维护的一些变量
 
     /*
      * InheritableThreadLocal values pertaining to this thread. This map is
@@ -192,17 +197,17 @@ class Thread implements Runnable {
      * not specify a stack size.  It is up to the VM to do whatever it
      * likes with this number; some VMs will ignore it.
      */
-    private long stackSize;
+    private long stackSize;        //此线程请求的堆栈大小，如果创建者未指定堆栈大小，则为0。虚拟机可以用这个数字来做任何喜欢的事情一些虚拟机将忽略它。
 
     /*
      * JVM-private state that persists after native thread termination.
      */
-    private long nativeParkEventPointer;
+    private long nativeParkEventPointer;  //本地线程终止后仍然存在的JVM私有状态。。
 
     /*
      * Thread ID
      */
-    private long tid;
+    private long tid;  //线程的id
 
     /* For generating thread ID */
     private static long threadSeqNumber;
@@ -211,7 +216,7 @@ class Thread implements Runnable {
      * initialized to indicate thread 'not yet started'
      */
 
-    private volatile int threadStatus = 0;
+    private volatile int threadStatus = 0; //线程状态 初始化指线程尚未启动
 
 
     private static synchronized long nextThreadID() {
@@ -230,8 +235,10 @@ class Thread implements Runnable {
      * operation, if any.  The blocker's interrupt method should be invoked
      * after setting this thread's interrupt status.
      */
+    //在可中断的I / O操作（如果有）中阻塞此线程的对象。在设置此线程的中断状态后，应调用阻塞程序的中断方法
     private volatile Interruptible blocker;
-    private final Object blockerLock = new Object();
+
+    private final Object blockerLock = new Object();    //对象锁
 
     /* Set the blocker field; invoked via sun.misc.SharedSecrets from java.nio code
      */
@@ -244,24 +251,24 @@ class Thread implements Runnable {
     /**
      * The minimum priority that a thread can have.
      */
-    public final static int MIN_PRIORITY = 1;
+    public final static int MIN_PRIORITY = 1;  //线程的最低优先级
 
    /**
      * The default priority that is assigned to a thread.
      */
-    public final static int NORM_PRIORITY = 5;
+    public final static int NORM_PRIORITY = 5;  //默认的优先级
 
     /**
      * The maximum priority that a thread can have.
      */
-    public final static int MAX_PRIORITY = 10;
+    public final static int MAX_PRIORITY = 10;  //最大的优先级
 
     /**
      * Returns a reference to the currently executing thread object.
      *
      * @return  the currently executing thread.
      */
-    public static native Thread currentThread();
+    public static native Thread currentThread(); //获取当前线程
 
     /**
      * A hint to the scheduler that the current thread is willing to yield
@@ -279,7 +286,9 @@ class Thread implements Runnable {
      * concurrency control constructs such as the ones in the
      * {@link java.util.concurrent.locks} package.
      */
-    public static native void yield();
+    //使当前线程从执行状态（运行状态）变为可执行态（就绪状态）。cpu会从众多的可执行态里选择，
+    // 也就是说，当前也就是刚刚的那个线程还是有可能会被再次执行到的，并不是说一定会执行其他线程而该线程在下一次中不会执行到了
+    public static native void yield();  //
 
     /**
      * Causes the currently executing thread to sleep (temporarily cease
@@ -298,6 +307,7 @@ class Thread implements Runnable {
      *          <i>interrupted status</i> of the current thread is
      *          cleared when this exception is thrown.
      */
+    //当前正在执行的线程（this.currentThread()）休眠（暂停执行）指定的毫秒数，这取决于系统定时器和调度程序的精度和准确性。线程不会丢失monitors。不会释放lock
     public static native void sleep(long millis) throws InterruptedException;
 
     /**
@@ -362,6 +372,15 @@ class Thread implements Runnable {
      * @param inheritThreadLocals if {@code true}, inherit initial values for
      *            inheritable thread-locals from the constructing thread
      */
+    /**
+     * 线程的构早方法
+     * @param g   线程组
+     * @param target  Runnable
+     * @param name 线程名称
+     * @param stackSize 新线程所需的堆栈大小，零表示此参数将被忽略。
+     * @param acc AccessControlContext继承，或AccessController.getContext（）为null
+     * @param inheritThreadLocals  如果{@code true}，继承初始值来自构造线程的可继承线程
+     */
     private void init(ThreadGroup g, Runnable target, String name,
                       long stackSize, AccessControlContext acc,
                       boolean inheritThreadLocals) {
@@ -370,20 +389,23 @@ class Thread implements Runnable {
         }
 
         this.name = name;
-
+        //当前线程是该线程的父线程
         Thread parent = currentThread();
+        //获取系统的安全管理器
         SecurityManager security = System.getSecurityManager();
         if (g == null) {
             /* Determine if it's an applet or not */
 
             /* If there is a security manager, ask the security manager
                what to do. */
+            //security不为null时，线程所在group为security的group
             if (security != null) {
                 g = security.getThreadGroup();
             }
 
             /* If the security doesn't have a strong opinion of the matter
                use the parent thread group. */
+            //security为null时，使用父线程的group
             if (g == null) {
                 g = parent.getThreadGroup();
             }
@@ -391,6 +413,7 @@ class Thread implements Runnable {
 
         /* checkAccess regardless of whether or not threadgroup is
            explicitly passed in. */
+        //确定当前运行的线程是否有权限修改此线程组。
         g.checkAccess();
 
         /*
@@ -404,6 +427,7 @@ class Thread implements Runnable {
 
         g.addUnstarted();
 
+        //将线程组 守护线程标志 优先级 设置为父亲线程的属性
         this.group = g;
         this.daemon = parent.isDaemon();
         this.priority = parent.getPriority();
@@ -415,6 +439,7 @@ class Thread implements Runnable {
                 acc != null ? acc : AccessController.getContext();
         this.target = target;
         setPriority(priority);
+        //从父线程继承可继承的ThreadLocal
         if (inheritThreadLocals && parent.inheritableThreadLocals != null)
             this.inheritableThreadLocals =
                 ThreadLocal.createInheritedMap(parent.inheritableThreadLocals);
@@ -696,6 +721,9 @@ class Thread implements Runnable {
      * @see        #run()
      * @see        #stop()
      */
+    /**
+     * 线程的启动
+     */
     public synchronized void start() {
         /**
          * This method is not invoked for the main method thread or "system"
@@ -710,15 +738,16 @@ class Thread implements Runnable {
         /* Notify the group that this thread is about to be started
          * so that it can be added to the group's list of threads
          * and the group's unstarted count can be decremented. */
-        group.add(this);
+        group.add(this);     //往线程组添加线程
 
         boolean started = false;
         try {
-            start0();
-            started = true;
+            start0();          //
+            started = true;    //
         } finally {
             try {
                 if (!started) {
+                    //启动不成功，group设置当前线程启动失败
                     group.threadStartFailed(this);
                 }
             } catch (Throwable ignore) {
@@ -728,7 +757,7 @@ class Thread implements Runnable {
         }
     }
 
-    private native void start0();
+    private native void start0();  //通过C代码初始化线程需要的系统资源。
 
     /**
      * If this thread was constructed using a separate
@@ -741,6 +770,8 @@ class Thread implements Runnable {
      * @see     #start()
      * @see     #stop()
      * @see     #Thread(ThreadGroup, Runnable, String)
+     *
+     * 线程启动后 会执行run（） 方法
      */
     @Override
     public void run() {
@@ -835,7 +866,7 @@ class Thread implements Runnable {
      *       are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     @Deprecated
-    public final void stop() {
+    public final void stop() {   // 强制停止一个线程
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             checkAccess();
@@ -912,13 +943,14 @@ class Thread implements Runnable {
      * @spec JSR-51
      */
     public void interrupt() {
+        //中断方法
         if (this != Thread.currentThread())
             checkAccess();
 
         synchronized (blockerLock) {
             Interruptible b = blocker;
             if (b != null) {
-                interrupt0();           // Just to set the interrupt flag
+                interrupt0();           // Just to set the interrupt flag  只是在线程中打个标记 并不是真正的停止线程
                 b.interrupt(this);
                 return;
             }
@@ -1000,7 +1032,7 @@ class Thread implements Runnable {
      * @return  <code>true</code> if this thread is alive;
      *          <code>false</code> otherwise.
      */
-    public final native boolean isAlive();
+    public final native boolean isAlive(); //判断这个线程是否alive
 
     /**
      * Suspends this thread.
@@ -2045,6 +2077,6 @@ class Thread implements Runnable {
     private native void stop0(Object o);
     private native void suspend0();
     private native void resume0();
-    private native void interrupt0();
+    private native void interrupt0();  //设置中断标志
     private native void setNativeName(String name);
 }

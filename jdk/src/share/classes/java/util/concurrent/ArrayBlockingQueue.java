@@ -91,16 +91,16 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     private static final long serialVersionUID = -817911632652898426L;
 
     /** The queued items */
-    final Object[] items;
+    final Object[] items;     // 底层数据结构
 
-    /** items index for next take, poll, peek or remove */
-    int takeIndex;
+    /** items index for next take, poll, peek or remove */ //
+    int takeIndex;   //用来为下一个take/poll/remove的索引（出队）
 
     /** items index for next put, offer, or add */
-    int putIndex;
+    int putIndex;   //用来作为下一个put offer add的索引
 
     /** Number of elements in the queue */
-    int count;
+    int count;     //队列中元素的个数
 
     /*
      * Concurrency control uses the classic two-condition algorithm
@@ -108,13 +108,13 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      */
 
     /** Main lock guarding all access */
-    final ReentrantLock lock;
+    final ReentrantLock lock;           //锁
 
     /** Condition for waiting takes */
-    private final Condition notEmpty;
+    private final Condition notEmpty;  //等待出队的条件
 
     /** Condition for waiting puts */
-    private final Condition notFull;
+    private final Condition notFull;   //等到存队列的条件
 
     /**
      * Shared state for currently active iterators, or null if there
@@ -154,6 +154,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * Inserts element at current put position, advances, and signals.
      * Call only when holding lock.
      */
+    //这里入队列
     private void enqueue(E x) {
         // assert lock.getHoldCount() == 1;
         // assert items[putIndex] == null;
@@ -162,26 +163,33 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         if (++putIndex == items.length)
             putIndex = 0;
         count++;
+        /**
+         * 唤醒一个线程
+         * 如果有任意一个线程正在等待这个条件，那么选中其中的一个区唤醒。
+         * 在从等待状态被唤醒之前，被选中的线程必须重新获得锁
+         */
         notEmpty.signal();
     }
 
     /**
      * Extracts element at current take position, advances, and signals.
      * Call only when holding lock.
+     * 出队列 头部
+     *
      */
     private E dequeue() {
         // assert lock.getHoldCount() == 1;
         // assert items[takeIndex] != null;
-        final Object[] items = this.items;
+        final Object[] items = this.items;  //获取queue 所有的数据
         @SuppressWarnings("unchecked")
-        E x = (E) items[takeIndex];
+        E x = (E) items[takeIndex];          //取出 takeIndex的及诶单
         items[takeIndex] = null;
-        if (++takeIndex == items.length)
+        if (++takeIndex == items.length)     //当takeIndex == items.length 时候 takenIndex 归 0
             takeIndex = 0;
         count--;
         if (itrs != null)
             itrs.elementDequeued();
-        notFull.signal();
+        notFull.signal();              //告诉入列的Condition 可以唤醒了
         return x;
     }
 
@@ -249,13 +257,18 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      *        if {@code false} the access order is unspecified.
      * @throws IllegalArgumentException if {@code capacity < 1}
      */
+    /**
+     * 初始化队列 指定的容量
+     * @param capacity
+     * @param fair  ture 按照入列的顺序 false 随机 其实随机非随机
+     */
     public ArrayBlockingQueue(int capacity, boolean fair) {
         if (capacity <= 0)
             throw new IllegalArgumentException();
         this.items = new Object[capacity];
-        lock = new ReentrantLock(fair);
-        notEmpty = lock.newCondition();
-        notFull =  lock.newCondition();
+        lock = new ReentrantLock(fair);       //fair 其实就是判断公平锁 还是非公平锁
+        notEmpty = lock.newCondition();       //出队列的Condition 类似于  wait notify
+        notFull =  lock.newCondition();       //入队列的Condition
     }
 
     /**
@@ -321,15 +334,24 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      *
      * @throws NullPointerException if the specified element is null
      */
+    /**
+     *
+     * 入队列
+     * 像队列尾部加入一个元素
+     * 队列没满返回 true else false
+     * add（）方法失败的话会直接抛出异常
+     * @param e
+     * @return
+     */
     public boolean offer(E e) {
         checkNotNull(e);
         final ReentrantLock lock = this.lock;
-        lock.lock();
+        lock.lock(); //加锁
         try {
-            if (count == items.length)
+            if (count == items.length) //对垒达到限值
                 return false;
             else {
-                enqueue(e);
+                enqueue(e);  //瑞队列
                 return true;
             }
         } finally {
@@ -343,15 +365,20 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      *
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
+     *
+     * 在队尾插入一个元素
+     *
+     * 如果队列满了就一直阻塞 直到数组不满了或者线程被中断
+     *
      */
     public void put(E e) throws InterruptedException {
         checkNotNull(e);
-        final ReentrantLock lock = this.lock;
+        final ReentrantLock lock = this.lock; //
         lock.lockInterruptibly();
         try {
-            while (count == items.length)
-                notFull.await();
-            enqueue(e);
+            while (count == items.length) //队列满了 就一直阻塞在这里
+                notFull.await();  //入列的Condition阻塞 ，等到唤醒 或中断
+            enqueue(e);           //这里如对垒
         } finally {
             lock.unlock();
         }
@@ -365,26 +392,53 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
+    /**
+     *
+     * @param e 插入的数据
+     * @param timeout  //存活时间
+     * @param unit  TimeUnit
+     * @return
+     * @throws InterruptedException
+     */
     public boolean offer(E e, long timeout, TimeUnit unit)
         throws InterruptedException {
 
         checkNotNull(e);
-        long nanos = unit.toNanos(timeout);
+        long nanos = unit.toNanos(timeout);  //转为纳秒级别的
         final ReentrantLock lock = this.lock;
-        lock.lockInterruptibly();
+        /**
+         * lockInterruptibly()
+         * 1，当前线程没有中断的情况下获取到锁
+         * 2，获取成功方法结束
+         * 3，如果锁无法获取，当前线程被阻塞，直到下面情况发生：
+         *   1）当前线程(被唤醒后)成功获取锁
+         *   2）当前线程被其他线程中断
+         */
+        lock.lockInterruptibly(); // 加锁
         try {
             while (count == items.length) {
-                if (nanos <= 0)
+                if (nanos <= 0)               //说明已经超时
                     return false;
-                nanos = notFull.awaitNanos(nanos);
+                /*
+                 * 进行等待：
+                 * 在这个过程中可能发生三件事：
+                 * 1、被唤醒-->继续当前这个for(;;)循环
+                 * 2、超时-->继续当前这个for(;;)循环
+                 * 3、被中断-->之后直接执行catch部分的代码
+                 */
+                nanos = notFull.awaitNanos(nanos);//进行等待（在此过程中，时间会流失,在此过程中，线程也可能被唤醒）
             }
-            enqueue(e);
+            enqueue(e);  //入队列
             return true;
         } finally {
             lock.unlock();
         }
     }
 
+    /**
+     * 取元素
+     * @return
+     */
     public E poll() {
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -395,15 +449,20 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         }
     }
 
+    /**
+     * 从队列中取出元素
+     * @return
+     * @throws InterruptedException
+     */
     public E take() throws InterruptedException {
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == 0)
-                notEmpty.await();
+            while (count == 0)          //队列为空的话 一直阻塞
+                notEmpty.await();       //出列的Condition 阻塞 直到被唤醒 或者 中断
             return dequeue();
         } finally {
-            lock.unlock();
+            lock.unlock();             //最后别忘了释放锁
         }
     }
 

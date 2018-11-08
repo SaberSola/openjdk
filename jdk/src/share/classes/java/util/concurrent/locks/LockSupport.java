@@ -117,8 +117,24 @@ import sun.misc.Unsafe;
  *   }
  * }}</pre>
  */
+
+/**
+ *  1,LockSupport 是个线程阻塞的工具类 可用于在线程内任意位置让线程阻塞和释放
+ *
+ *  2,LockSupport通常不会被直接使用，更多是作为锁实现的基础工具类
+ *
+ *  3, LockSupport底层依赖UnSafe实现，即park()和unpark()原语方法，通过"许可"替代状态
+ *
+ *  4,park方法用于线程等待"许可"，unpark方法用于为线程提供"许可"  park 申请permit - 1 permit = 0 线程开始阻塞
+ *    unpark 其实是释放阻塞 permit + 1  这时候park 获取到允许 继续执行
+ *
+ *  5,由于"许可"的存在，当出现一个线程调用park方法，其他线程调用unpark方法时，会保持活跃
+ *
+ *  5,
+ *
+ */
 public class LockSupport {
-    private LockSupport() {} // Cannot be instantiated.
+    private LockSupport() {} // Cannot be instantiated.   禁止实例化
 
     private static void setBlocker(Thread t, Object arg) {
         // Even though volatile, hotspot doesn't need a write barrier here.

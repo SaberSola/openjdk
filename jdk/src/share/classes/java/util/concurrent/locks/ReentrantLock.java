@@ -106,14 +106,14 @@ import java.util.Collection;
 public class ReentrantLock implements Lock, java.io.Serializable {
     private static final long serialVersionUID = 7373984872572414699L;
     /** Synchronizer providing all implementation mechanics */
-    private final Sync sync;
+    private final Sync sync;  //实现了AbstractQueuedSynchronizer AQS
 
     /**
      * Base of synchronization control for this lock. Subclassed
      * into fair and nonfair versions below. Uses AQS state to
      * represent the number of holds on the lock.
      */
-    abstract static class Sync extends AbstractQueuedSynchronizer {
+    abstract static class Sync extends AbstractQueuedSynchronizer {        //抽象类
         private static final long serialVersionUID = -5179523762034025860L;
 
         /**

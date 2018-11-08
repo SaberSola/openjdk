@@ -111,7 +111,7 @@ public class ArrayList<E> extends AbstractList<E>
     /**
      * Default initial capacity.
      */
-    private static final int DEFAULT_CAPACITY = 10;
+    private static final int DEFAULT_CAPACITY = 10;  //默认容量
 
     /**
      * Shared empty array instance used for empty instances.
@@ -123,7 +123,7 @@ public class ArrayList<E> extends AbstractList<E>
      * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
      * first element is added.
      */
-    private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
+    private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {}; //默认构造函数的空数组
 
     /**
      * The array buffer into which the elements of the ArrayList are stored.
@@ -131,14 +131,14 @@ public class ArrayList<E> extends AbstractList<E>
      * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
      * will be expanded to DEFAULT_CAPACITY when the first element is added.
      */
-    transient Object[] elementData; // non-private to simplify nested class access
+    transient Object[] elementData; // non-private to simplify nested class access  //实际存放数据
 
     /**
      * The size of the ArrayList (the number of elements it contains).
      *
      * @serial
      */
-    private int size;
+    private int size;          // list的size
 
     /**
      * Constructs an empty list with the specified initial capacity.
@@ -147,11 +147,11 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IllegalArgumentException if the specified initial capacity
      *         is negative
      */
-    public ArrayList(int initialCapacity) {
+    public ArrayList(int initialCapacity) {               //带初始容量的数组
         if (initialCapacity > 0) {
-            this.elementData = new Object[initialCapacity];
+            this.elementData = new Object[initialCapacity];    // > 0 赋值
         } else if (initialCapacity == 0) {
-            this.elementData = EMPTY_ELEMENTDATA;
+            this.elementData = EMPTY_ELEMENTDATA;              // = 0 的给默认值
         } else {
             throw new IllegalArgumentException("Illegal Capacity: "+
                                                initialCapacity);
@@ -163,7 +163,7 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public ArrayList() {
         this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
-    }
+    } //默认的构造方法
 
     /**
      * Constructs a list containing the elements of the specified
@@ -220,18 +220,18 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     private void ensureCapacityInternal(int minCapacity) {
-        if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
-            minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
+        if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {   //利用 == 可以判断数组是否是用默认构造函数初始化的
+            minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);  //小于默认值的话取默认值
         }
 
         ensureExplicitCapacity(minCapacity);
     }
 
     private void ensureExplicitCapacity(int minCapacity) {
-        modCount++;
+        modCount++;                      //modCount 修改次数 + 1
 
         // overflow-conscious code
-        if (minCapacity - elementData.length > 0)
+        if (minCapacity - elementData.length > 0)      // 判断是否需要扩容
             grow(minCapacity);
     }
 
@@ -249,16 +249,20 @@ public class ArrayList<E> extends AbstractList<E>
      *
      * @param minCapacity the desired minimum capacity
      */
+    /**
+     * 扩容
+     * @param minCapacity
+     */
     private void grow(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = elementData.length;
-        int newCapacity = oldCapacity + (oldCapacity >> 1);
+        int newCapacity = oldCapacity + (oldCapacity >> 1); //这里代表扩容为原来的1.5 就是增加。0.5 * oldCapacity
         if (newCapacity - minCapacity < 0)
             newCapacity = minCapacity;
         if (newCapacity - MAX_ARRAY_SIZE > 0)
             newCapacity = hugeCapacity(minCapacity);
         // minCapacity is usually close to size, so this is a win:
-        elementData = Arrays.copyOf(elementData, newCapacity);
+        elementData = Arrays.copyOf(elementData, newCapacity);   //拷贝 扩容 构建一个新数组
     }
 
     private static int hugeCapacity(int minCapacity) {
@@ -455,8 +459,8 @@ public class ArrayList<E> extends AbstractList<E>
      * @return <tt>true</tt> (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
-        ensureCapacityInternal(size + 1);  // Increments modCount!!
-        elementData[size++] = e;
+        ensureCapacityInternal(size + 1);  // Increments modCount!!  这里是否需要扩容
+        elementData[size++] = e;   //在数组的尾部增加一个元素,并修改size
         return true;
     }
 
@@ -470,11 +474,11 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public void add(int index, E element) {
-        rangeCheckForAdd(index);
+        rangeCheckForAdd(index);  //这里是越界判断 抛异常
 
-        ensureCapacityInternal(size + 1);  // Increments modCount!!
+        ensureCapacityInternal(size + 1);  // Increments modCount!! //判断扩容
         System.arraycopy(elementData, index, elementData, index + 1,
-                         size - index);
+                         size - index);// 将index开始的数据 向后移动一位
         elementData[index] = element;
         size++;
     }
@@ -489,16 +493,16 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public E remove(int index) {
-        rangeCheck(index);
+        rangeCheck(index); ///判断是否越界
 
-        modCount++;
-        E oldValue = elementData(index);
+        modCount++;   //修改modCount
+        E oldValue = elementData(index); //读出要删除的值
 
         int numMoved = size - index - 1;
         if (numMoved > 0)
             System.arraycopy(elementData, index+1, elementData, index,
-                             numMoved);
-        elementData[--size] = null; // clear to let GC do its work
+                             numMoved);     //用复制 覆盖数组数据
+        elementData[--size] = null; // clear to let GC do its work 置空尾数组避免强引用 help gc
 
         return oldValue;
     }
