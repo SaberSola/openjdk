@@ -336,8 +336,10 @@ public class ProxyGenerator {
                                             int accessFlags)
     {
         ProxyGenerator gen = new ProxyGenerator(name, interfaces, accessFlags);
+        // 真正生成字节码的方法
         final byte[] classFile = gen.generateClassFile();
-
+        // 如果saveGeneratedFiles为true 则生成字节码文件，所以在开始我们要设置这个参数
+        // 当然，也可以通过返回的bytes自己输出
         if (saveGeneratedFiles) {
             java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
@@ -429,6 +431,8 @@ public class ProxyGenerator {
         /* ============================================================
          * Step 1: Assemble ProxyMethod objects for all methods to
          * generate proxy dispatching code for.
+         *
+         * 步骤1：为所有方法生成代理调度代码，将代理方法对象集合起来
          */
 
         /*
@@ -437,6 +441,11 @@ public class ProxyGenerator {
          * the methods from the proxy interfaces so that the methods from
          * java.lang.Object take precedence over duplicate methods in the
          * proxy interfaces.
+         *
+         * 增加hashCodeMethod
+         * 增加equalsMethod
+         * 增加toStringMethod
+         *
          */
         addProxyMethod(hashCodeMethod, Object.class);
         addProxyMethod(equalsMethod, Object.class);
@@ -446,6 +455,7 @@ public class ProxyGenerator {
          * Now record all of the methods from the proxy interfaces, giving
          * earlier interfaces precedence over later ones with duplicate
          * methods.
+         * //获取接口的所有方法 并将其方法添加到道理方法中
          */
         for (Class<?> intf : interfaces) {
             for (Method m : intf.getMethods()) {
@@ -457,6 +467,9 @@ public class ProxyGenerator {
          * For each set of proxy methods with the same signature,
          * verify that the methods' return types are compatible.
          */
+        /**
+         * 判断方法的签名 返回值是否一致
+         */
         for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
             checkReturnTypes(sigmethods);
         }
@@ -466,6 +479,7 @@ public class ProxyGenerator {
          * fields and methods in the class we are generating.
          */
         try {
+            // 生成代理类的构造函数
             methods.add(generateConstructor());
 
             for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
@@ -477,10 +491,12 @@ public class ProxyGenerator {
                          ACC_PRIVATE | ACC_STATIC));
 
                     // generate code for proxy method and add it
+                    // 生成代理类的代理方法
                     methods.add(pm.generateMethod());
                 }
             }
 
+            // 为代理类生成静态代码块，对一些字段进行初始化
             methods.add(generateStaticInitializer());
 
         } catch (IOException e) {
@@ -501,6 +517,7 @@ public class ProxyGenerator {
         /*
          * Make sure that constant pool indexes are reserved for the
          * following items before starting to write the final class file.
+         * 在开始编写最终类文件之前，确保为下面的项目保留常量池索引。
          */
         cp.getClass(dotToSlash(className));
         cp.getClass(superclassName);
@@ -524,22 +541,22 @@ public class ProxyGenerator {
              */
                                         // u4 magic;
             dout.writeInt(0xCAFEBABE);
-                                        // u2 minor_version;
+                                        // u2 minor_version; // u2 次要版本;
             dout.writeShort(CLASSFILE_MINOR_VERSION);
-                                        // u2 major_version;
+                                        // u2 major_version; // u2 主版本
             dout.writeShort(CLASSFILE_MAJOR_VERSION);
 
             cp.write(dout);             // (write constant pool)
 
-                                        // u2 access_flags;
+                                        // u2 access_flags; 访问标识
             dout.writeShort(accessFlags);
                                         // u2 this_class;
-            dout.writeShort(cp.getClass(dotToSlash(className)));
+            dout.writeShort(cp.getClass(dotToSlash(className))); //本类名
                                         // u2 super_class;
-            dout.writeShort(cp.getClass(superclassName));
+            dout.writeShort(cp.getClass(superclassName)); //父类名
 
                                         // u2 interfaces_count;
-            dout.writeShort(interfaces.length);
+            dout.writeShort(interfaces.length);          //接口
                                         // u2 interfaces[interfaces_count];
             for (Class<?> intf : interfaces) {
                 dout.writeShort(cp.getClass(
@@ -547,7 +564,7 @@ public class ProxyGenerator {
             }
 
                                         // u2 fields_count;
-            dout.writeShort(fields.size());
+            dout.writeShort(fields.size());     //属性 字段
                                         // field_info fields[fields_count];
             for (FieldInfo f : fields) {
                 f.write(dout);
@@ -567,7 +584,7 @@ public class ProxyGenerator {
             throw new InternalError("unexpected I/O Exception", e);
         }
 
-        return bout.toByteArray();
+        return bout.toByteArray();           //最后生成字节码
     }
 
     /**

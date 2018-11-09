@@ -97,16 +97,20 @@ final class WeakCache<K, P, V> {
      *                              {@code subKeyFactory} or {@code value}
      *                              calculated by {@code valueFactory} is null.
      */
-    public V get(K key, P parameter) {
+
+    public V get(K key, P parameter) {   //有proxy 类进来  key = loader p = interfaces
         Objects.requireNonNull(parameter);
 
         expungeStaleEntries();
 
-        Object cacheKey = CacheKey.valueOf(key, refQueue);
+        // 将classlaoder 包装成 cachekey
+        Object cacheKey = CacheKey.valueOf(key, refQueue);      //获取keu
 
         // lazily install the 2nd level valuesMap for the particular cacheKey
+        //获取得到二级缓存
         ConcurrentMap<Object, Supplier<V>> valuesMap = map.get(cacheKey);
         if (valuesMap == null) {
+            //如果没得到
             ConcurrentMap<Object, Supplier<V>> oldValuesMap
                 = map.putIfAbsent(cacheKey,
                                   valuesMap = new ConcurrentHashMap<>());
@@ -117,13 +121,17 @@ final class WeakCache<K, P, V> {
 
         // create subKey and retrieve the possible Supplier<V> stored by that
         // subKey from valuesMap
+        // 根据代理类实现的接口数组来生成二级缓存key
+        // 通过subKey获取二级缓存值
         Object subKey = Objects.requireNonNull(subKeyFactory.apply(key, parameter));
         Supplier<V> supplier = valuesMap.get(subKey);
         Factory factory = null;
-
+        // 这个循环提供了轮询机制, 如果条件为假就继续重试直到条件为真为止
         while (true) {
             if (supplier != null) {
                 // supplier might be a Factory or a CacheValue<V> instance
+                // 在这里supplier可能是一个Factory也可能会是一个CacheValue
+                // 在这里不作判断, 而是在Supplier实现类的get方法里面进行验证
                 V value = supplier.get();
                 if (value != null) {
                     return value;
@@ -134,15 +142,17 @@ final class WeakCache<K, P, V> {
             // or a Factory that wasn't successful in installing the CacheValue)
 
             // lazily construct a Factory
+            //新创建一个factory 最为subKey 的值
             if (factory == null) {
                 factory = new Factory(key, parameter, subKey, valuesMap);
             }
 
+
             if (supplier == null) {
-                supplier = valuesMap.putIfAbsent(subKey, factory);
+                supplier = valuesMap.putIfAbsent(subKey, factory);  //putIfAbsent 已经不存不会覆盖 直接返回旧的值
                 if (supplier == null) {
-                    // successfully installed Factory
-                    supplier = factory;
+                    // successfully installed Factory //这里表明成功将factory放图缓存
+                    supplier = factory;    //
                 }
                 // else retry with winning supplier
             } else {

@@ -172,7 +172,7 @@ import java.util.Spliterator;
  * @since 1.4
  */
 
-public abstract class Buffer {
+public abstract class Buffer {              //抽象类缓冲区 就相当于数组一样
 
     /**
      * The characteristics of Spliterators that traverse and split elements
@@ -182,10 +182,10 @@ public abstract class Buffer {
         Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.ORDERED;
 
     // Invariants: mark <= position <= limit <= capacity
-    private int mark = -1;
-    private int position = 0;
-    private int limit;
-    private int capacity;
+    private int mark = -1;             //标记
+    private int position = 0;          //定了下一个将要被写入或者读取的元素索引，它的值由get()/put()方法自动更新，在新创建一个Buffer对象时，position被初始化为0。
+    private int limit;                 //指定还有多少数据需要取出(在从缓冲区写入通道时)，或者还有多少空间可以放入数据(在从通道读入缓冲区时)。
+    private int capacity;              //指定了可以存储在缓冲区中的最大数据容量，实际上，它指定了底层数组的大小，或者至少是指定了准许我们使用的底层数组的容量。
 
     // Used only by direct buffers
     // NOTE: hoisted here for speed in JNI GetDirectBufferAddress
